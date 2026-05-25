@@ -1,6 +1,6 @@
 import { call, put, takeLatest } from "redux-saga/effects";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import axios from "axios";
+import { supabase } from "../../services/api/supabaseClient";
 
 import {
   addEmployeeRequest,
@@ -11,23 +11,26 @@ import {
   getEmployeesFailure
 } from "./employeeSlice";
 
-const API = "http://localhost:3001/api/employees";
+const EMPLOYEES_TABLE = "employees";
 
 type EmployeePayload = Record<string, unknown>;
-type EmployeesResponse = {
-  data: unknown;
-};
-type SagaError = {
-  message?: string;
-};
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallback;
+}
 
 // ADD EMPLOYEE
 function* addEmployee(action: PayloadAction<EmployeePayload>) {
   try {
-    yield call(axios.post, `${API}/add`, action.payload);
+    const { error } = yield call([supabase, supabase.from(EMPLOYEES_TABLE).insert], [action.payload]);
+    if (error) throw error;
     yield put(addEmployeeSuccess());
-  } catch (error) {
-    const message = (error as SagaError).message || "Employee create failed";
+  } catch (error: unknown) {
+    const message = getErrorMessage(error, "Employee create failed");
     yield put(addEmployeeFailure(message));
   }
 }
@@ -36,10 +39,11 @@ function* addEmployee(action: PayloadAction<EmployeePayload>) {
 // GET EMPLOYEES
 function* getEmployees() {
   try {
-    const res: EmployeesResponse = yield call(axios.get, API);
-    yield put(getEmployeesSuccess(res.data));
-  } catch (error) {
-    const message = (error as SagaError).message || "Employee fetch failed";
+    const { data, error } = yield call([supabase, supabase.from(EMPLOYEES_TABLE).select], "*");
+    if (error) throw error;
+    yield put(getEmployeesSuccess(data || []));
+  } catch (error: unknown) {
+    const message = getErrorMessage(error, "Employee fetch failed");
     yield put(getEmployeesFailure(message));
   }
 }

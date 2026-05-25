@@ -35,8 +35,7 @@ export default function AddSalaryPage() {
   useEffect(() => {
     const loadEmployees = async () => {
       try {
-        const response = await fetch("http://localhost:3001/api/employees");
-        const data = await response.json();
+        const data = await api<{ items: EmployeeOption[] }>("/employees");
         setEmployees(Array.isArray(data.items) ? data.items : []);
       } catch {
         setEmployees([]);
@@ -83,10 +82,10 @@ export default function AddSalaryPage() {
         })
       });
 
-      alert(response.message);
+      console.info(response.message);
       router.push("/salaries");
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Salary creation failed");
+      console.info(error instanceof Error ? error.message : "Salary creation failed");
     } finally {
       setSubmitting(false);
     }
@@ -210,3 +209,4 @@ export default function AddSalaryPage() {
     </OfficeShell>
   );
 }
+

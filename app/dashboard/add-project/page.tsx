@@ -1,9 +1,10 @@
-﻿"use client";
+"use client";
 
 import { type FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { OfficeShell, SurfaceCard } from "@/src/components/office/OfficeShell";
+import { api } from "@/src/services/api/client";
 
 export default function AddProjectPage() {
   const router = useRouter();
@@ -16,25 +17,21 @@ export default function AddProjectPage() {
   const addProject = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const res = await fetch("http://localhost:3001/api/projects/add", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        projectName,
-        status,
-        role,
-        developerName,
-        techStack
-      })
-    });
-
-    const data = await res.json();
-    alert(data.message);
-
-    if (res.ok) {
+    try {
+      const data = await api<{ message: string }>("/projects/add", {
+        method: "POST",
+        body: JSON.stringify({
+          projectName,
+          status,
+          role,
+          developerName,
+          techStack
+        })
+      });
+      console.info(data.message);
       router.push("/dashboard");
+    } catch (error) {
+      console.info(error instanceof Error ? error.message : "Project creation failed");
     }
   };
 
@@ -96,3 +93,4 @@ export default function AddProjectPage() {
     </OfficeShell>
   );
 }
+

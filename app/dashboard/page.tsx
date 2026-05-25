@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -51,8 +51,7 @@ export default function Dashboard() {
 
   const refreshEmployees = async () => {
     try {
-      const res = await fetch("http://localhost:3001/api/employees");
-      const data = await res.json();
+      const data = await api<{ items: Employee[]; totalEmployees: number }>("/employees");
       setEmployees(Array.isArray(data.items) ? data.items : []);
       setTotalEmployees(data.totalEmployees || 0);
     } catch {
@@ -63,14 +62,7 @@ export default function Dashboard() {
 
   const refreshProjects = async () => {
     try {
-      const res = await fetch("http://localhost:3001/api/projects");
-
-      if (!res.ok) {
-        setProjects([]);
-        return;
-      }
-
-      const data = await res.json();
+      const data = await api<{ data: Project[] }>("/projects");
       const allProjects = Array.isArray(data?.data) ? data.data : [];
       setProjects(allProjects);
     } catch {
@@ -80,8 +72,7 @@ export default function Dashboard() {
 
   const refreshLeaves = async () => {
     try {
-      const res = await fetch("http://localhost:3001/api/leaves");
-      const data = await res.json();
+      const data = await api<{ items: Leave[] }>("/leaves");
       setLeaves(Array.isArray(data.items) ? data.items : []);
     } catch {
       setLeaves([]);
@@ -111,28 +102,26 @@ export default function Dashboard() {
   }, [isAdmin, refreshSalaryRows]);
 
   const deleteEmployee = async (id: string) => {
-    const res = await fetch(`http://localhost:3001/api/employees/${id}`, {
-      method: "DELETE"
-    });
-
-    const data = await res.json();
-    alert(data.message);
-
-    if (res.ok) {
+    try {
+      const data = await api<{ message: string }>(`/employees/${id}`, {
+        method: "DELETE"
+      });
+      console.info(data.message);
       void refreshEmployees();
+    } catch (error) {
+      console.info(error instanceof Error ? error.message : "Employee delete failed");
     }
   };
 
-  const deleteProject = async (id: string) => {
-    const res = await fetch(`http://localhost:3001/api/projects/${id}`, {
-      method: "DELETE"
-    });
-
-    const data = await res.json();
-    alert(data.message);
-
-    if (res.ok) {
+  const deleteProject = async (project: Project) => {
+    try {
+      await api<{ message: string }>("/projects/delete", {
+        method: "POST",
+        body: JSON.stringify(project)
+      });
       void refreshProjects();
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : "Project delete failed");
     }
   };
 
@@ -291,7 +280,7 @@ export default function Dashboard() {
                           </span>
                         </td>
                         <td className="px-5 py-4 text-right">
-                          <button onClick={() => deleteProject(project._id)} className="rounded-xl border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-rose-200 hover:bg-rose-500/20">Delete Project</button>
+                          <button onClick={() => deleteProject(project)} className="rounded-xl border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-rose-200 hover:bg-rose-500/20">Delete Project</button>
                         </td>
                       </tr>
                     ))
@@ -305,3 +294,4 @@ export default function Dashboard() {
     </OfficeShell>
   );
 }
+

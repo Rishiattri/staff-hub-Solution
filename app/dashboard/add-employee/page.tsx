@@ -1,10 +1,12 @@
-﻿"use client";
+"use client";
 
 import Image from "next/image";
 import { type FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
+
 import { OfficeShell, SurfaceCard } from "@/src/components/office/OfficeShell";
+import { api } from "@/src/services/api/client";
 
 export default function AddEmployeePage() {
   const router = useRouter();
@@ -19,6 +21,7 @@ export default function AddEmployeePage() {
   const [birthDate, setBirthDate] = useState("");
   const [profileImage, setProfileImage] = useState("");
   const [profileImageName, setProfileImageName] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleProfileImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -39,31 +42,33 @@ export default function AddEmployeePage() {
 
   const addEmployee = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting) {
+      return;
+    }
 
-    const res = await fetch("http://localhost:3001/api/employees/add", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        fullName,
-        email,
-        phoneNumber,
+    setIsSubmitting(true);
+    try {
+      const data = await api<{ message: string }>("/employees", {
+        method: "POST",
+        body: JSON.stringify({
+          fullName,
+          email,
+          phoneNumber,
         role,
         education,
         address,
         experienceLevel,
-        joiningDate,
-        birthDate,
-        profileImage
-      })
-    });
-
-    const data = await res.json();
-    alert(data.message);
-
-    if (res.ok) {
+          joiningDate,
+          birthDate,
+          profileImage
+        })
+      });
+      console.info(data.message);
       router.push("/dashboard");
+    } catch (error) {
+      console.info(error instanceof Error ? error.message : "Failed to add employee");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -115,7 +120,13 @@ export default function AddEmployeePage() {
               <textarea value={address} onChange={(event) => setAddress(event.target.value)} required className="min-h-[120px] w-full rounded-3xl border border-white/10 bg-white/[0.04] px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-violet-400/40 focus:bg-white/[0.07]" placeholder="Office address or employee location" />
             </label>
             <div className="md:col-span-2 flex flex-wrap gap-3 pt-2">
-              <button type="submit" className="rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(124,58,237,0.35)] hover:-translate-y-0.5">Save Employee</button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(124,58,237,0.35)] hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
+              >
+                {isSubmitting ? "Saving..." : "Save Employee"}
+              </button>
               <button type="button" onClick={() => router.push("/dashboard")} className="rounded-2xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-slate-200 hover:border-violet-400/30 hover:bg-violet-500/10">Cancel</button>
             </div>
           </form>
@@ -154,3 +165,4 @@ export default function AddEmployeePage() {
     </OfficeShell>
   );
 }
+

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { OfficeShell, SurfaceCard } from "@/src/components/office/OfficeShell";
+import { api } from "@/src/services/api/client";
 
 type Employee = {
   _id: string;
@@ -22,8 +23,7 @@ export default function EmployeesPage() {
 
   const loadEmployees = async () => {
     try {
-      const res = await fetch("http://localhost:3001/api/employees");
-      const data = await res.json();
+      const data = await api<{ items: Employee[] }>("/employees");
       setEmployees(Array.isArray(data.items) ? data.items : []);
     } catch {
       setEmployees([]);
@@ -37,12 +37,12 @@ export default function EmployeesPage() {
   }, []);
 
   const deleteEmployee = async (id: string) => {
-    const res = await fetch(`http://localhost:3001/api/employees/${id}`, { method: "DELETE" });
-    const data = await res.json();
-    alert(data.message);
-
-    if (res.ok) {
+    try {
+      const data = await api<{ message: string }>(`/employees/${id}`, { method: "DELETE" });
+      console.info(data.message);
       await loadEmployees();
+    } catch (error) {
+      console.info(error instanceof Error ? error.message : "Employee delete failed");
     }
   };
 
@@ -121,3 +121,4 @@ export default function EmployeesPage() {
     </OfficeShell>
   );
 }
+

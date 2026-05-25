@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { OfficeShell, SurfaceCard } from "@/src/components/office/OfficeShell";
+import { api } from "@/src/services/api/client";
 
 type Project = {
   _id: string;
@@ -19,14 +20,7 @@ export default function ProjectsPage() {
 
   const loadProjects = async () => {
     try {
-      const res = await fetch("http://localhost:3001/api/projects");
-
-      if (!res.ok) {
-        setProjects([]);
-        return;
-      }
-
-      const data = await res.json();
+      const data = await api<{ data: Project[] }>("/projects");
       setProjects(Array.isArray(data.data) ? data.data : []);
     } catch {
       setProjects([]);
@@ -39,13 +33,15 @@ export default function ProjectsPage() {
     })();
   }, []);
 
-  const deleteProject = async (id: string) => {
-    const res = await fetch(`http://localhost:3001/api/projects/${id}`, { method: "DELETE" });
-    const data = await res.json();
-    alert(data.message);
-
-    if (res.ok) {
+  const deleteProject = async (project: Project) => {
+    try {
+      await api<{ message: string }>("/projects/delete", {
+        method: "POST",
+        body: JSON.stringify(project)
+      });
       await loadProjects();
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : "Project delete failed");
     }
   };
 
@@ -104,7 +100,7 @@ export default function ProjectsPage() {
                         </span>
                       </td>
                       <td className="px-5 py-4 text-right">
-                        <button onClick={() => void deleteProject(project._id)} className="rounded-xl border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-rose-200 hover:bg-rose-500/20">
+                        <button onClick={() => void deleteProject(project)} className="rounded-xl border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-rose-200 hover:bg-rose-500/20">
                           Delete Project
                         </button>
                       </td>
@@ -119,3 +115,4 @@ export default function ProjectsPage() {
     </OfficeShell>
   );
 }
+

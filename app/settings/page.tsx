@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -115,9 +115,9 @@ export default function SettingsPage() {
         method: "PUT",
         body: JSON.stringify(settings)
       });
-      alert(response.message);
+      console.info(response.message);
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Settings update failed");
+      console.info(error instanceof Error ? error.message : "Settings update failed");
     }
   };
 
@@ -127,12 +127,12 @@ export default function SettingsPage() {
       const response = await api<{ message: string }>("/settings/notifications/run", {
         method: "POST"
       });
-      alert(response.message);
+      console.info(response.message);
 
       const logsResponse = await api<{ items: typeof notificationLogs }>("/settings/notifications/logs");
       setNotificationLogs(Array.isArray(logsResponse.items) ? logsResponse.items : []);
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Notification run failed");
+      console.info(error instanceof Error ? error.message : "Notification run failed");
     } finally {
       setRunningNotifications(false);
     }
@@ -366,3 +366,4 @@ export default function SettingsPage() {
     </OfficeShell>
   );
 }
+

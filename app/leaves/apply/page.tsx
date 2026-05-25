@@ -1,9 +1,10 @@
-﻿"use client";
+"use client";
 
 import { type FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { OfficeShell, SurfaceCard } from "@/src/components/office/OfficeShell";
+import { api } from "@/src/services/api/client";
 
 export default function ApplyLeavePage() {
   const router = useRouter();
@@ -16,19 +17,15 @@ export default function ApplyLeavePage() {
   const applyLeave = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const res = await fetch("http://localhost:3001/api/leaves/apply", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ employeeName, leaveType, startDate, endDate, reason })
-    });
-
-    const data = await res.json();
-    alert(data.message);
-
-    if (res.ok) {
+    try {
+      const data = await api<{ message: string }>("/leaves/apply", {
+        method: "POST",
+        body: JSON.stringify({ employeeName, leaveType, startDate, endDate, reason })
+      });
+      console.info(data.message);
       router.push("/leaves");
+    } catch (error) {
+      console.info(error instanceof Error ? error.message : "Leave request failed");
     }
   };
 
@@ -86,3 +83,4 @@ export default function ApplyLeavePage() {
     </OfficeShell>
   );
 }
+

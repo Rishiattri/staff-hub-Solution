@@ -76,10 +76,10 @@ export default function AttendancePage() {
     try {
       setBusyAction(action);
       const response = await api<{ message: string }>(path, { method: "POST" });
-      alert(response.message);
+      console.info(response.message);
       await loadAttendance();
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Attendance action failed");
+      console.info(error instanceof Error ? error.message : "Attendance action failed");
     } finally {
       setBusyAction(null);
     }
@@ -90,10 +90,10 @@ export default function AttendancePage() {
       const response = await api<{ message: string }>(`/attendance/${id}`, {
         method: "DELETE"
       });
-      alert(response.message);
+      console.info(response.message);
       await loadAttendance();
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Attendance delete failed");
+      console.info(error instanceof Error ? error.message : "Attendance delete failed");
     }
   };
 
@@ -217,3 +217,4 @@ export default function AttendancePage() {
     </OfficeShell>
   );
 }
+

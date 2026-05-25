@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 
@@ -67,9 +67,9 @@ export default function ProfilePage() {
         method: "PUT",
         body: JSON.stringify(profile)
       });
-      alert(response.message);
+      console.info(response.message);
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Profile update failed");
+      console.info(error instanceof Error ? error.message : "Profile update failed");
     }
   };
 
@@ -79,10 +79,10 @@ export default function ProfilePage() {
         method: "PATCH",
         body: JSON.stringify(passwordForm)
       });
-      alert(response.message);
+      console.info(response.message);
       setPasswordForm({ currentPassword: "", newPassword: "" });
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Password update failed");
+      console.info(error instanceof Error ? error.message : "Password update failed");
     }
   };
 
@@ -153,3 +153,4 @@ export default function ProfilePage() {
     </OfficeShell>
   );
 }
+

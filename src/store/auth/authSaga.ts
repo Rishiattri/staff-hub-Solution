@@ -1,5 +1,5 @@
 ﻿import { call, put, takeLatest } from "redux-saga/effects";
-import axios from "axios";
+import { supabase } from "../../services/api/supabaseClient";
 import {
   loginRequest,
   loginSuccess,
@@ -10,17 +10,10 @@ import {
 } from "./authSlice";
 import type { AuthSuccessPayload, LoginPayload, SignupPayload } from "./authTypes";
 
-const API_URL = "http://localhost:3001/api";
-
 function getErrorMessage(error: unknown) {
-  if (axios.isAxiosError(error)) {
-    return error.response?.data?.message || error.message || "Request failed";
-  }
-
   if (error instanceof Error) {
     return error.message;
   }
-
   return "Request failed";
 }
 
@@ -32,12 +25,20 @@ function persistAuth(data: AuthSuccessPayload) {
 
 function* handleLogin(action: { payload: LoginPayload }): Generator {
   try {
-    const res = (yield call(axios.post, `${API_URL}/login`, action.payload)) as {
-      data: AuthSuccessPayload;
+    const { email, password } = action.payload;
+    const { data, error } = yield call([supabase.auth, supabase.auth.signInWithPassword], { email, password });
+    if (error) throw error;
+    const payload: AuthSuccessPayload = {
+      token: data.session?.access_token || "",
+      user: {
+        id: data.user?.id || "",
+        fullName: data.user?.user_metadata?.fullName || data.user?.email || "",
+        email: data.user?.email || "",
+        role: data.user?.role || "employee"
+      }
     };
-
-    persistAuth(res.data);
-    yield put(loginSuccess(res.data));
+    persistAuth(payload);
+    yield put(loginSuccess(payload));
   } catch (error) {
     yield put(loginFailure(getErrorMessage(error)));
   }
@@ -45,18 +46,30 @@ function* handleLogin(action: { payload: LoginPayload }): Generator {
 
 function* handleSignup(action: { payload: SignupPayload }): Generator {
   try {
-    const res = (yield call(axios.post, `${API_URL}/signup`, action.payload)) as {
-      data: AuthSuccessPayload;
+    const { email, password, fullName } = action.payload;
+    const { data, error } = yield call([supabase.auth, supabase.auth.signUp], {
+      email,
+      password,
+      options: { data: { fullName } }
+    });
+    if (error) throw error;
+    const payload: AuthSuccessPayload = {
+      token: data.session?.access_token || "",
+      user: {
+        id: data.user?.id || "",
+        fullName: data.user?.user_metadata?.fullName || data.user?.email || "",
+        email: data.user?.email || "",
+        role: data.user?.role || "employee"
+      }
     };
-
-    persistAuth(res.data);
-    yield put(signupSuccess(res.data));
+    persistAuth(payload);
+    yield put(signupSuccess(payload));
   } catch (error) {
     yield put(signupFailure(getErrorMessage(error)));
   }
 }
 
 export function* authSaga() {
-  yield takeLatest(loginRequest.type, handleLogin);
-  yield takeLatest(signupRequest.type, handleSignup);
+  yield takeLatest(loginRequest, handleLogin);
+  yield takeLatest(signupRequest, handleSignup);
 }

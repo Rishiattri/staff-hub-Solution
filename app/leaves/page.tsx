@@ -1,9 +1,10 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { OfficeShell, SurfaceCard } from "@/src/components/office/OfficeShell";
+import { api } from "@/src/services/api/client";
 
 interface LeaveRequest {
   _id: string;
@@ -38,15 +39,12 @@ export default function LeavesPage() {
   const loadData = async () => {
     try {
       const [leaveRes, balanceRes] = await Promise.all([
-        fetch("http://localhost:3001/api/leaves"),
-        fetch("http://localhost:3001/api/leaves/balances")
+        api<{ items: LeaveRequest[] }>("/leaves"),
+        api<{ items: LeaveBalance[] }>("/leaves/balances")
       ]);
 
-      const leaveData = await leaveRes.json();
-      const balanceData = await balanceRes.json();
-
-      setLeaves(Array.isArray(leaveData.items) ? leaveData.items : []);
-      setBalances(Array.isArray(balanceData.items) ? balanceData.items : []);
+      setLeaves(Array.isArray(leaveRes.items) ? leaveRes.items : []);
+      setBalances(Array.isArray(balanceRes.items) ? balanceRes.items : []);
     } catch {
       setLeaves([]);
       setBalances([]);
@@ -62,19 +60,15 @@ export default function LeavesPage() {
   }, []);
 
   const updateLeaveStatus = async (id: string, status: "Approved" | "Rejected" | "Cancelled") => {
-    const res = await fetch(`http://localhost:3001/api/leaves/${id}/status`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ status })
-    });
-
-    const data = await res.json();
-    alert(data.message);
-
-    if (res.ok) {
+    try {
+      const data = await api<{ message: string }>(`/leaves/${id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status })
+      });
+      console.info(data.message);
       void loadData();
+    } catch (error) {
+      console.info(error instanceof Error ? error.message : "Leave update failed");
     }
   };
 
@@ -211,3 +205,4 @@ export default function LeavesPage() {
     </OfficeShell>
   );
 }
+

@@ -1,8 +1,9 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 
 import { OfficeShell, SurfaceCard } from "@/src/components/office/OfficeShell";
+import { api } from "@/src/services/api/client";
 
 interface LeaveRequest {
   _id: string;
@@ -19,8 +20,7 @@ export default function ManageLeavesPage() {
 
   const loadLeaves = async () => {
     try {
-      const res = await fetch("http://localhost:3001/api/leaves");
-      const data = await res.json();
+      const data = await api<{ items: LeaveRequest[] }>("/leaves");
       const requests = Array.isArray(data.items) ? data.items : [];
       setLeaves(requests.filter((leave: LeaveRequest) => leave.status === "Pending"));
     } catch {
@@ -37,19 +37,15 @@ export default function ManageLeavesPage() {
   }, []);
 
   const updateLeaveStatus = async (id: string, status: "Approved" | "Rejected" | "Cancelled") => {
-    const res = await fetch(`http://localhost:3001/api/leaves/${id}/status`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ status })
-    });
-
-    const data = await res.json();
-    alert(data.message);
-
-    if (res.ok) {
+    try {
+      const data = await api<{ message: string }>(`/leaves/${id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status })
+      });
+      console.info(data.message);
       void loadLeaves();
+    } catch (error) {
+      console.info(error instanceof Error ? error.message : "Leave update failed");
     }
   };
 
@@ -111,3 +107,4 @@ export default function ManageLeavesPage() {
     </OfficeShell>
   );
 }
+
